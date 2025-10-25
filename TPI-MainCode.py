@@ -1,17 +1,16 @@
 import csv
 
-
 def cargar_paises(ruta_archivo):
     paises = []
     try:
-        with open(ruta_archivo, newline="", encoding="utf-8") as archivo:
+        with open(ruta_archivo, newline='', encoding='utf-8') as archivo:
             lector = csv.DictReader(archivo)
             for fila in lector:
                 pais = {
                     "nombre": fila["nombre"],
                     "poblacion": int(fila["poblacion"]),
                     "superficie": int(fila["superficie"]),
-                    "continente": fila["continente"],
+                    "continente": fila["continente"]
                 }
                 paises.append(pais)
         print(f"Se cargaron {len(paises)} países correctamente.")
@@ -20,6 +19,18 @@ def cargar_paises(ruta_archivo):
     except Exception as e:
         print("Ocurrió un error al leer el archivo:", e)
     return paises
+
+def guardar_paises(ruta_archivo, paises):
+    try:
+        with open(ruta_archivo, "w", newline='', encoding='utf-8') as archivo:
+            campos = ["nombre", "poblacion", "superficie", "continente"]
+            escritor = csv.DictWriter(archivo, fieldnames=campos)
+            escritor.writeheader()
+            for p in paises:
+                escritor.writerow(p)
+        print("Cambios guardados correctamente.")
+    except Exception as e:
+        print("Error al guardar el archivo:", e)
 
 
 def buscar_pais(paises, texto):
@@ -63,9 +74,7 @@ def mostrar_lista(paises):
         print("No se encontraron resultados.")
     else:
         for p in paises:
-            print(
-                f"{p['nombre']} - {p['continente']} - Pob: {p['poblacion']} - Sup: {p['superficie']} km²"
-            )
+            print(f"{p['nombre']} - {p['continente']} - Pob: {p['poblacion']} - Sup: {p['superficie']} km²")
 
 
 def mostrar_estadisticas(paises):
@@ -96,6 +105,48 @@ def mostrar_estadisticas(paises):
     for cont, cant in continentes.items():
         print(f"{cont}: {cant}")
 
+def agregar_pais(paises):
+    print("\n--- Agregar un nuevo país ---")
+    nombre = input("Nombre del país: ").strip()
+    poblacion = int(input("Población: "))
+    superficie = int(input("Superficie en km²: "))
+    continente = input("Continente: ").strip()
+
+    for p in paises:
+        if p["nombre"].lower() == nombre.lower():
+            print("Ese país ya existe en la lista.")
+            return
+
+    nuevo = {
+        "nombre": nombre,
+        "poblacion": poblacion,
+        "superficie": superficie,
+        "continente": continente
+    }
+
+    paises.append(nuevo)
+    print("País agregado correctamente.")
+
+
+def actualizar_pais(paises):
+    print("\n--- Actualizar datos de un país ---")
+    nombre = input("Ingrese el nombre del país a actualizar: ").strip()
+
+    for p in paises:
+        if p["nombre"].lower() == nombre.lower():
+            print(f"Datos actuales: Población {p['poblacion']}, Superficie {p['superficie']} km²")
+            try:
+                nueva_pob = int(input("Nueva población: "))
+                nueva_sup = int(input("Nueva superficie: "))
+                p["poblacion"] = nueva_pob
+                p["superficie"] = nueva_sup
+                print("Datos actualizados correctamente.")
+                return
+            except ValueError:
+                print("Debe ingresar valores numéricos válidos.")
+                return
+
+    print("No se encontró el país ingresado.")
 
 def menu():
     print("\n--- MENÚ PRINCIPAL ---")
@@ -106,10 +157,13 @@ def menu():
     print("5. Ordenar países")
     print("6. Ver estadísticas")
     print("7. Salir")
-
+    print("8. Agregar un país")
+    print("9. Actualizar superficie y población")
 
 def main():
-    ruta = r"C:\Users\SANTIAGO\Documents\GitHub\TP1-TUP-GRUPO123\paises.csv"
+    from pathlib import Path
+    script_dir = Path(__file__).parent
+    ruta = script_dir / "paises.csv"   
     paises = cargar_paises(ruta)
 
     if not paises:
@@ -152,12 +206,17 @@ def main():
             mostrar_estadisticas(paises)
 
         elif opcion == "7":
+            guardar_paises(ruta, paises)
             print("Programa finalizado.")
             break
+
+        elif opcion == "8":
+            agregar_pais(paises)
+
+        elif opcion == "9":
+            actualizar_pais(paises)
 
         else:
             print("Opción no válida, intente otra vez.")
 
-
-if __name__ == "__main__":
-    main()
+main()
