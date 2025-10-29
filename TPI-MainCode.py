@@ -1,90 +1,121 @@
 import csv
+from pathlib import Path
+
+
+def es_entero_valido(s):
+    if not isinstance(s, str):
+        return False
+    s = s.strip()
+    return s.isdigit() and s != ""
+
+
+def convertir_a_enteros_fila(fila):
+    pob = fila.get("poblacion", "").strip()
+    sup = fila.get("superficie", "").strip()
+    if es_entero_valido(pob) and es_entero_valido(sup):
+        return int(pob), int(sup)
+    return None, None
+
 
 def cargar_paises(ruta_archivo):
     paises = []
-    try:
-        with open(ruta_archivo, newline='', encoding='utf-8') as archivo:
-            lector = csv.DictReader(archivo)
-            for fila in lector:
-                pais = {
-                    "nombre": fila["nombre"],
-                    "poblacion": int(fila["poblacion"]),
-                    "superficie": int(fila["superficie"]),
-                    "continente": fila["continente"]
+    ruta = Path(ruta_archivo)
+    if not ruta.exists():
+        print("No se encontró el archivo CSV:", ruta)
+        return paises
+
+    with ruta.open(newline="", encoding="utf-8") as archivo:
+        lector = csv.DictReader(archivo)
+        linea = 1
+        for fila in lector:
+            linea += 1
+            nombre = fila.get("nombre", "").strip()
+            continente = fila.get("continente", "").strip()
+            pob, sup = convertir_a_enteros_fila(fila)
+
+            if nombre == "" or continente == "" or pob is None or sup is None:
+                print(
+                    f"Aviso: fila {linea} ignorada por datos incompletos o inválidos."
+                )
+                continue
+
+            paises.append(
+                {
+                    "nombre": nombre,
+                    "poblacion": pob,
+                    "superficie": sup,
+                    "continente": continente,
                 }
-                paises.append(pais)
-        print(f"Se cargaron {len(paises)} países correctamente.")
-    except FileNotFoundError:
-        print("No se encontró el archivo CSV.")
-    except Exception as e:
-        print("Ocurrió un error al leer el archivo:", e)
+            )
+
+    print(f"Se cargaron {len(paises)} países correctamente.")
     return paises
 
+
 def guardar_paises(ruta_archivo, paises):
-    try:
-        with open(ruta_archivo, "w", newline='', encoding='utf-8') as archivo:
-            campos = ["nombre", "poblacion", "superficie", "continente"]
-            escritor = csv.DictWriter(archivo, fieldnames=campos)
-            escritor.writeheader()
-            for p in paises:
-                escritor.writerow(p)
-        print("Cambios guardados correctamente.")
-    except Exception as e:
-        print("Error al guardar el archivo:", e)
+    ruta = Path(ruta_archivo)
+    parent = ruta.parent
+    if not parent.exists():
+        print("Error: la carpeta destino no existe:", parent)
+        return
+
+    with ruta.open("w", newline="", encoding="utf-8") as archivo:
+        campos = ["nombre", "poblacion", "superficie", "continente"]
+        escritor = csv.DictWriter(archivo, fieldnames=campos)
+        escritor.writeheader()
+        for p in paises:
+            escritor.writerow(
+                {
+                    "nombre": p.get("nombre", ""),
+                    "poblacion": int(p.get("poblacion", 0)),
+                    "superficie": int(p.get("superficie", 0)),
+                    "continente": p.get("continente", ""),
+                }
+            )
+    print("Cambios guardados correctamente.")
 
 
 def buscar_pais(paises, texto):
-    encontrados = []
-    for p in paises:
-        if texto.lower() in p["nombre"].lower():
-            encontrados.append(p)
-    return encontrados
+    return [p for p in paises if texto.lower() in p["nombre"].lower()]
 
 
 def filtrar_por_continente(paises, cont):
-    filtrados = []
-    for p in paises:
-        if p["continente"].lower() == cont.lower():
-            filtrados.append(p)
-    return filtrados
+    return [p for p in paises if p["continente"].lower() == cont.lower()]
 
 
 def filtrar_por_poblacion(paises, minimo, maximo):
-    resultado = []
-    for p in paises:
-        if minimo <= p["poblacion"] <= maximo:
-            resultado.append(p)
-    return resultado
+    return [p for p in paises if minimo <= p["poblacion"] <= maximo]
 
 
 def filtrar_por_superficie(paises, minimo, maximo):
-    resultado = []
-    for p in paises:
-        if minimo <= p["superficie"] <= maximo:
-            resultado.append(p)
-    return resultado
+    return [p for p in paises if minimo <= p["superficie"] <= maximo]
 
 
 def ordenar_paises(paises, campo, descendente=False):
+    campos_permitidos = {"nombre", "poblacion", "superficie", "continente"}
+    if campo not in campos_permitidos:
+        print("Campo inválido para ordenar. Se usará 'nombre' por defecto.")
+        campo = "nombre"
     return sorted(paises, key=lambda x: x[campo], reverse=descendente)
 
 
 def mostrar_lista(paises):
-    if len(paises) == 0:
+    if not paises:
         print("No se encontraron resultados.")
     else:
         for p in paises:
-            print(f"{p['nombre']} - {p['continente']} - Pob: {p['poblacion']} - Sup: {p['superficie']} km²")
+            print(
+                f"{p['nombre']} - {p['continente']} - Pob: {p['poblacion']} - Sup: {p['superficie']} km²"
+            )
 
 
 def mostrar_estadisticas(paises):
-    if len(paises) == 0:
+    if not paises:
         print("No hay datos cargados.")
         return
 
     mayor = max(paises, key=lambda x: x["poblacion"])
     menor = min(paises, key=lambda x: x["poblacion"])
-
     prom_pob = sum(p["poblacion"] for p in paises) / len(paises)
     prom_sup = sum(p["superficie"] for p in paises) / len(paises)
 
@@ -97,56 +128,69 @@ def mostrar_estadisticas(paises):
     continentes = {}
     for p in paises:
         cont = p["continente"]
-        if cont in continentes:
-            continentes[cont] += 1
-        else:
-            continentes[cont] = 1
-
+        continentes[cont] = continentes.get(cont, 0) + 1
     for cont, cant in continentes.items():
         print(f"{cont}: {cant}")
+
+
+def pedir_entero_valido(mensaje, minimo=0, maximo=None):
+    while True:
+        valor = input(mensaje).strip()
+        if es_entero_valido(valor):
+            num = int(valor)
+            if num < minimo:
+                print(f"El valor debe ser >= {minimo}.")
+                continue
+            if maximo is not None and num > maximo:
+                print(f"El valor debe ser <= {maximo}.")
+                continue
+            return num
+        print("Ingrese un número entero válido.")
+
 
 def agregar_pais(paises):
     print("\n--- Agregar un nuevo país ---")
     nombre = input("Nombre del país: ").strip()
-    poblacion = int(input("Población: "))
-    superficie = int(input("Superficie en km²: "))
+    if not nombre:
+        print("Nombre inválido.")
+        return
+    poblacion = pedir_entero_valido("Población: ", minimo=0)
+    superficie = pedir_entero_valido("Superficie en km²: ", minimo=0)
     continente = input("Continente: ").strip()
+    if not continente:
+        print("Continente inválido.")
+        return
 
     for p in paises:
         if p["nombre"].lower() == nombre.lower():
             print("Ese país ya existe en la lista.")
             return
 
-    nuevo = {
-        "nombre": nombre,
-        "poblacion": poblacion,
-        "superficie": superficie,
-        "continente": continente
-    }
-
-    paises.append(nuevo)
+    paises.append(
+        {
+            "nombre": nombre,
+            "poblacion": poblacion,
+            "superficie": superficie,
+            "continente": continente,
+        }
+    )
     print("País agregado correctamente.")
 
 
 def actualizar_pais(paises):
     print("\n--- Actualizar datos de un país ---")
     nombre = input("Ingrese el nombre del país a actualizar: ").strip()
-
     for p in paises:
         if p["nombre"].lower() == nombre.lower():
-            print(f"Datos actuales: Población {p['poblacion']}, Superficie {p['superficie']} km²")
-            try:
-                nueva_pob = int(input("Nueva población: "))
-                nueva_sup = int(input("Nueva superficie: "))
-                p["poblacion"] = nueva_pob
-                p["superficie"] = nueva_sup
-                print("Datos actualizados correctamente.")
-                return
-            except ValueError:
-                print("Debe ingresar valores numéricos válidos.")
-                return
-
+            print(
+                f"Datos actuales: Población {p['poblacion']}, Superficie {p['superficie']} km²"
+            )
+            p["poblacion"] = pedir_entero_valido("Nueva población: ", minimo=0)
+            p["superficie"] = pedir_entero_valido("Nueva superficie: ", minimo=0)
+            print("Datos actualizados correctamente.")
+            return
     print("No se encontró el país ingresado.")
+
 
 def menu():
     print("\n--- MENÚ PRINCIPAL ---")
@@ -159,63 +203,49 @@ def menu():
     print("7. Salir")
     print("8. Agregar un país")
     print("9. Actualizar superficie y población")
+    print("10. Guardar cambios")
+
 
 def main():
-    from pathlib import Path
     script_dir = Path(__file__).parent
-    ruta = script_dir / "paises.csv"   
+    ruta = script_dir / "paises.csv"
     paises = cargar_paises(ruta)
-
-    if not paises:
-        return
 
     while True:
         menu()
-        opcion = input("Elija una opción: ")
+        opcion = input("Elija una opción: ").strip()
 
         if opcion == "1":
             nombre = input("Ingrese nombre o parte del nombre: ")
-            resultado = buscar_pais(paises, nombre)
-            mostrar_lista(resultado)
-
+            mostrar_lista(buscar_pais(paises, nombre))
         elif opcion == "2":
             cont = input("Ingrese continente: ")
-            resultado = filtrar_por_continente(paises, cont)
-            mostrar_lista(resultado)
-
+            mostrar_lista(filtrar_por_continente(paises, cont))
         elif opcion == "3":
-            minimo = int(input("Población mínima: "))
-            maximo = int(input("Población máxima: "))
-            resultado = filtrar_por_poblacion(paises, minimo, maximo)
-            mostrar_lista(resultado)
-
+            minimo = pedir_entero_valido("Población mínima: ", minimo=0)
+            maximo = pedir_entero_valido("Población máxima: ", minimo=minimo)
+            mostrar_lista(filtrar_por_poblacion(paises, minimo, maximo))
         elif opcion == "4":
-            minimo = int(input("Superficie mínima: "))
-            maximo = int(input("Superficie máxima: "))
-            resultado = filtrar_por_superficie(paises, minimo, maximo)
-            mostrar_lista(resultado)
-
+            minimo = pedir_entero_valido("Superficie mínima: ", minimo=0)
+            maximo = pedir_entero_valido("Superficie máxima: ", minimo=minimo)
+            mostrar_lista(filtrar_por_superficie(paises, minimo, maximo))
         elif opcion == "5":
-            campo = input("Ordenar por (nombre/poblacion/superficie): ").lower()
-            desc = input("¿Descendente? (s/n): ").lower()
-            descendente = desc == "s"
-            ordenados = ordenar_paises(paises, campo, descendente)
-            mostrar_lista(ordenados)
-
+            campo = input(
+                "Ordenar por (nombre/poblacion/superficie/continente): "
+            ).lower()
+            desc = input("¿Descendente? (s/n): ").lower() == "s"
+            mostrar_lista(ordenar_paises(paises, campo, desc))
         elif opcion == "6":
             mostrar_estadisticas(paises)
-
         elif opcion == "7":
-            guardar_paises(ruta, paises)
             print("Programa finalizado.")
             break
-
         elif opcion == "8":
             agregar_pais(paises)
-
         elif opcion == "9":
             actualizar_pais(paises)
-
+        elif opcion == "10":
+            guardar_paises(ruta, paises)
         else:
             print("Opción no válida, intente otra vez.")
 
