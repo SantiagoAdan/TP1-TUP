@@ -200,10 +200,10 @@ def menu():
     print("4. Filtrar por rango de superficie")
     print("5. Ordenar países")
     print("6. Ver estadísticas")
-    print("7. Salir")
-    print("8. Agregar un país")
-    print("9. Actualizar superficie y población")
-    print("10. Guardar cambios")
+    print("7. Agregar un país")
+    print("8. Actualizar superficie y población")
+    print("9. Guardar cambios")
+    print("10. Salir")
 
 
 def main():
@@ -238,14 +238,14 @@ def main():
         elif opcion == "6":
             mostrar_estadisticas(paises)
         elif opcion == "7":
+            agregar_pais(paises)
+        elif opcion == "8":
+            actualizar_pais(paises)
+        elif opcion == "9":
+            guardar_paises(ruta, paises)
+        elif opcion == "10":
             print("Programa finalizado.")
             break
-        elif opcion == "8":
-            agregar_pais(paises)
-        elif opcion == "9":
-            actualizar_pais(paises)
-        elif opcion == "10":
-            guardar_paises(ruta, paises)
         else:
             print("Opción no válida, intente otra vez.")
 
