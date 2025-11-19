@@ -1,12 +1,15 @@
-nombre,poblacion,superficie,continente
-Argentina,45376763,2780400,América
-Brasil,213993437,8515767,América
-Chile,19116201,756102,América
-Alemania,123123123,156156,Europa
-Francia,67413000,643801,Europa
-Egipto,104258327,1002450,África
-Japón,125800000,377975,Asia
-China,1412600000,9596961,Asia
-Australia,25687041,7692024,Oceania
-Canadá,38008005,9984670,América
-Corea del Sur,156156156,123123,Asia
+pais,poblacion,superficie_km2,continente
+Estados Unidos,340000000,9630000,América del Norte
+China,1416000000,9390000,Asia
+Alemania,83000000,357000,Europa
+Japón,125000000,378000,Asia
+India,1464000000,2970000,Asia
+Reino Unido,67000000,243000,Europa
+Francia,65000000,643801,Europa
+Italia,60000000,301000,Europa
+Canadá,39000000,9980000,América del Norte
+Brasil,213000000,8510000,América del Sur
+Corea del Sur,51000000,100000,Asia
+Australia,26000000,7690000,Oceanía
+España,47000000,505000,Europa
+México,131000000,1960000,América del Norte
